@@ -1,0 +1,7 @@
+[
+  {"name": "payload", "type": "JSON", "mode": "NULLABLE"},
+  {"name": "source_file", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "extract_run_id", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "ingested_at", "type": "TIMESTAMP", "mode": "NULLABLE"},
+  {"name": "source_name", "type": "STRING", "mode": "NULLABLE"}
+]

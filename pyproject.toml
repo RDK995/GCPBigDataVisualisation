@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "gcp-bigdata-visualisation"
+version = "0.1.0"
+description = "Starter pipeline for API -> GCS -> BigQuery -> Looker"
+authors = ["Data Engineering Team <data@example.com>"]
+readme = "README.md"
+packages = [{ include = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+httpx = "^0.27.0"
+google-cloud-storage = "^2.18.0"
+google-cloud-bigquery = "^3.25.0"
+tenacity = "^9.0.0"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+pytest-mock = "^3.14.0"
+ruff = "^0.6.2"
+mypy = "^1.11.1"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
