@@ -1,17 +1,80 @@
-steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/gcp-bigdata-visualisation:$COMMIT_SHA', '.']
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args:
-      - run
-      - jobs
-      - deploy
-      - api-to-bq-pipeline
-      - --image=gcr.io/$PROJECT_ID/gcp-bigdata-visualisation:$COMMIT_SHA
-      - --region=us-central1
-      - --set-env-vars=ENV=prod
-images:
-  - 'gcr.io/$PROJECT_ID/gcp-bigdata-visualisation:$COMMIT_SHA'
+substitutions:
+  _AR_REGION: europe-west2
+  _AR_REPOSITORY: data-pipelines
+  _IMAGE_NAME: gcp-bigdata-visualisation
+  _JOB_NAME: api-to-bq-pipeline
+  _RUN_REGION: europe-west2
+  _SERVICE_ACCOUNT: api-to-bq-pipeline-runner@${PROJECT_ID}.iam.gserviceaccount.com
+  _CLOUDSQL_INSTANCES: ""
+  _TASK_TIMEOUT: 3600s
+  _MAX_RETRIES: "1"
+  _PARALLELISM: "1"
+  _TASK_COUNT: "1"
+  _CPU: "1"
+  _MEMORY: 1Gi
+  _RUNTIME_ENV: prod
+  _WORLD_BANK_INDICATOR_IDS: SP.POP.TOTL,NY.GDP.MKTP.CD
+  _WORLD_BANK_PAGE_SIZE: "20000"
+  _OPEN_METEO_HOURLY_VARIABLES: temperature_2m,precipitation,wind_speed_10m
+  _OPEN_METEO_LOCATIONS: london:51.5072:-0.1276;new_york:40.7128:-74.0060
+  _OPEN_METEO_TIMEZONE: UTC
+  _OPEN_METEO_ARCHIVE_DAYS: "7"
+  _OPEN_METEO_FORECAST_DAYS: "3"
+  _OPEN_METEO_ENABLE_FORECAST: "true"
+  _OPEN_METEO_ENABLE_ARCHIVE: "true"
+  _GCP_LOCATION: EU
+  _GCS_BUCKET: your-raw-bucket
+  _GCS_RAW_PREFIX: raw
+  _BQ_RAW_DATASET: analytics_raw
+  _BQ_STAGING_DATASET: analytics_staging
+  _BQ_MART_DATASET: analytics_mart
+  _WORLD_BANK_RAW_TABLE: world_bank_indicator
+  _OPEN_METEO_RAW_TABLE: open_meteo_response
+  _LOCAL_DATA_DIR: /tmp/data
+  _DEAD_LETTER_DIR: /tmp/data/dead_letter
+  _SECRET_VARS: ""
 
-# TODO(deploy): move env vars and secrets to Secret Manager + Cloud Run Job runtime env.
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$COMMIT_SHA"
+      - "."
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$COMMIT_SHA"
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "bash"
+    args:
+      - "-ceu"
+      - |
+        DEPLOY_ARGS=(
+          run jobs deploy "${_JOB_NAME}"
+          --image="${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$COMMIT_SHA"
+          --region="${_RUN_REGION}"
+          --service-account="${_SERVICE_ACCOUNT}"
+          --task-timeout="${_TASK_TIMEOUT}"
+          --max-retries="${_MAX_RETRIES}"
+          --parallelism="${_PARALLELISM}"
+          --tasks="${_TASK_COUNT}"
+          --cpu="${_CPU}"
+          --memory="${_MEMORY}"
+          --set-env-vars="ENV=${_RUNTIME_ENV},GCP_PROJECT_ID=$PROJECT_ID,GCP_LOCATION=${_GCP_LOCATION},GCS_BUCKET=${_GCS_BUCKET},GCS_RAW_PREFIX=${_GCS_RAW_PREFIX},BQ_RAW_DATASET=${_BQ_RAW_DATASET},BQ_STAGING_DATASET=${_BQ_STAGING_DATASET},BQ_MART_DATASET=${_BQ_MART_DATASET},WORLD_BANK_RAW_TABLE=${_WORLD_BANK_RAW_TABLE},OPEN_METEO_RAW_TABLE=${_OPEN_METEO_RAW_TABLE},WORLD_BANK_INDICATOR_IDS=${_WORLD_BANK_INDICATOR_IDS},WORLD_BANK_PAGE_SIZE=${_WORLD_BANK_PAGE_SIZE},OPEN_METEO_HOURLY_VARIABLES=${_OPEN_METEO_HOURLY_VARIABLES},OPEN_METEO_LOCATIONS=${_OPEN_METEO_LOCATIONS},OPEN_METEO_TIMEZONE=${_OPEN_METEO_TIMEZONE},OPEN_METEO_ARCHIVE_DAYS=${_OPEN_METEO_ARCHIVE_DAYS},OPEN_METEO_FORECAST_DAYS=${_OPEN_METEO_FORECAST_DAYS},OPEN_METEO_ENABLE_FORECAST=${_OPEN_METEO_ENABLE_FORECAST},OPEN_METEO_ENABLE_ARCHIVE=${_OPEN_METEO_ENABLE_ARCHIVE},LOCAL_DATA_DIR=${_LOCAL_DATA_DIR},DEAD_LETTER_DIR=${_DEAD_LETTER_DIR}"
+        )
+
+        if [[ -n "${_SECRET_VARS}" ]]; then
+          DEPLOY_ARGS+=(--set-secrets="${_SECRET_VARS}")
+        fi
+
+        if [[ -n "${_CLOUDSQL_INSTANCES}" ]]; then
+          DEPLOY_ARGS+=(--set-cloudsql-instances="${_CLOUDSQL_INSTANCES}")
+        fi
+
+        gcloud "${DEPLOY_ARGS[@]}"
+
+images:
+  - "${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$COMMIT_SHA"

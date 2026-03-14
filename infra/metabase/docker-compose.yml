@@ -1,0 +1,31 @@
+services:
+  metabase:
+    image: metabase/metabase:v0.56.5
+    container_name: gcp-bigdata-metabase
+    depends_on:
+      - metabase-db
+    ports:
+      - "8080:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabase
+      MB_DB_PASS: metabase
+      MB_DB_HOST: metabase-db
+    volumes:
+      - metabase-data:/metabase-data
+
+  metabase-db:
+    image: postgres:16-alpine
+    container_name: gcp-bigdata-metabase-db
+    environment:
+      POSTGRES_DB: metabase
+      POSTGRES_USER: metabase
+      POSTGRES_PASSWORD: metabase
+    volumes:
+      - metabase-db-data:/var/lib/postgresql/data
+
+volumes:
+  metabase-data:
+  metabase-db-data:

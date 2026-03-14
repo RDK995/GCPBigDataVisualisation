@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from google.cloud import storage
-
 
 class GCSClient:
+    """Thin wrapper around a single configured GCS bucket."""
+
     def __init__(self, project_id: str, bucket: str) -> None:
+        from google.cloud import storage
+
         self.client = storage.Client(project=project_id)
         self.bucket = self.client.bucket(bucket)
 

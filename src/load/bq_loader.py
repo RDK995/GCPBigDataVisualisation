@@ -6,6 +6,8 @@ from src.clients.bigquery_client import BigQueryClient
 
 
 class BigQueryLoader:
+    """Load raw JSONL files into a preconfigured BigQuery table."""
+
     def __init__(self, bq_client: BigQueryClient, table_ref: str) -> None:
         self.bq_client = bq_client
         self.table_ref = table_ref

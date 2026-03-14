@@ -8,6 +8,8 @@ from src.clients.gcs_client import GCSClient
 
 
 class GCSUploader:
+    """Upload landing files into one logical raw prefix in GCS."""
+
     def __init__(self, gcs_client: GCSClient, raw_prefix: str) -> None:
         self.gcs_client = gcs_client
         self.raw_prefix = raw_prefix.rstrip("/")

@@ -1,14 +1,25 @@
--- Raw landing table preserving full source payload.
-CREATE SCHEMA IF NOT EXISTS `${GCP_PROJECT_ID}.raw`;
+CREATE SCHEMA IF NOT EXISTS `${GCP_PROJECT_ID}.${BQ_RAW_DATASET}`;
+CREATE SCHEMA IF NOT EXISTS `${GCP_PROJECT_ID}.${BQ_STAGING_DATASET}`;
+CREATE SCHEMA IF NOT EXISTS `${GCP_PROJECT_ID}.${BQ_MART_DATASET}`;
 
-CREATE TABLE IF NOT EXISTS `${GCP_PROJECT_ID}.raw.api_entities_raw` (
-  payload JSON,
-  source_file STRING,
-  extract_run_id STRING,
+CREATE TABLE IF NOT EXISTS `${GCP_PROJECT_ID}.${BQ_RAW_DATASET}.${WORLD_BANK_RAW_TABLE}` (
   ingested_at TIMESTAMP,
-  source_name STRING
+  extract_run_id STRING,
+  source_file STRING,
+  indicator_id STRING,
+  payload JSON
 )
 PARTITION BY DATE(ingested_at)
-CLUSTER BY extract_run_id, source_name;
+CLUSTER BY indicator_id, extract_run_id;
 
--- TODO(model): adjust schema when you know stable source metadata fields.
+CREATE TABLE IF NOT EXISTS `${GCP_PROJECT_ID}.${BQ_RAW_DATASET}.${OPEN_METEO_RAW_TABLE}` (
+  ingested_at TIMESTAMP,
+  extract_run_id STRING,
+  source_file STRING,
+  location_id STRING,
+  latitude FLOAT64,
+  longitude FLOAT64,
+  payload JSON
+)
+PARTITION BY DATE(ingested_at)
+CLUSTER BY location_id, extract_run_id;
